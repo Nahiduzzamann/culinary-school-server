@@ -54,18 +54,29 @@ async function run() {
             const { role } = req.body;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
-              $set: {
-                role: role,
-              },
+                $set: {
+                    role: role,
+                },
             };
-      
+
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
-      
-          })
+
+        })
 
 
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
 
+            // if (req.decoded.email !== email) {
+            //     res.send({ admin: false })
+            // }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { user }
+            res.send(result);
+        })
 
         // cart collection apis
         app.get('/carts', async (req, res) => {
