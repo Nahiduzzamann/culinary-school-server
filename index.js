@@ -30,6 +30,53 @@ async function run() {
 
         const classesCartCollection = client.db("culinarySchoolDb").collection("classesCartCollection");
         const usersCollection = client.db("culinarySchoolDb").collection("usersCollection");
+        const instructorClassCollection = client.db("culinarySchoolDb").collection("instructorClassCollection");
+
+
+        ///instructor class
+        app.post('/instructorClass', async (req, res) => {
+            const item = req.body;
+            const result = await instructorClassCollection.insertOne(item);
+            res.send(result);
+        })
+        app.get('/classes/approved', async (req, res) => {
+            const query = { status: 'approved' };
+            const classes = await instructorClassCollection.find(query).toArray();
+            res.json(classes);
+
+        });
+        app.get('/instructorClass', async (req, res) => {
+            const result = await instructorClassCollection.find().toArray();
+            res.send(result);
+        });
+        app.patch('/instructorClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const { status } = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: status,
+                },
+            };
+            const result = await instructorClassCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+        app.patch('/instructorClassFeedback/:classId', async (req, res) => {
+
+            const classId = req.params.classId;
+            const { adminFeedback } = req.body;
+            const filter = { _id: new ObjectId(classId) };
+            const updateDoc = {
+                $set: {
+                    adminFeedback: adminFeedback,
+                },
+            };
+
+            const result = await instructorClassCollection.updateOne(filter, updateDoc);
+            res.json(result);
+        })
+
 
         // users related
         app.get('/users', async (req, res) => {
