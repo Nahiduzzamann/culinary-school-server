@@ -136,6 +136,18 @@ async function run() {
             const result = await classesCartCollection.find(query).toArray();
             res.send(result);
         });
+        app.post('/carts/update/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    isPayment: true
+                },
+            };
+
+            const result = await classesCartCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
 
         ///cart post
         app.post('/carts', async (req, res) => {
@@ -143,6 +155,13 @@ async function run() {
             const result = await classesCartCollection.insertOne(item);
             res.send(result);
         })
+        // Get a cart item by ID
+        app.get('/cart/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await classesCartCollection.findOne(query);
+            res.send(result);
+        });
 
         app.delete('/carts/:id', async (req, res) => {
             const id = req.params.id;
@@ -155,6 +174,8 @@ async function run() {
         // create payment intent
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
+            console.log(price);
+
             const amount = parseInt(price * 100);
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
