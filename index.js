@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
 
         const classesCartCollection = client.db("culinarySchoolDb").collection("classesCartCollection");
@@ -169,13 +169,19 @@ async function run() {
             const result = await classesCartCollection.deleteOne(query);
             res.send(result);
         })
+        app.get('/carts/:email', async (req, res) => {
+            const email = req.params.email;
+
+            const query = { email: email }
+            const user = await classesCartCollection.findOne(query);
+            const result = { user }
+            res.send(result);
+        })
 
 
         // create payment intent
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
-            console.log(price);
-
             const amount = parseInt(price * 100);
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
