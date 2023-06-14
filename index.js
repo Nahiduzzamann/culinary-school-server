@@ -46,6 +46,7 @@ async function run() {
             res.json(classes);
 
         });
+
         app.get('/instructorClass', async (req, res) => {
             const result = await instructorClassCollection.find().toArray();
             res.send(result);
@@ -57,12 +58,58 @@ async function run() {
             const updateDoc = {
                 $set: {
                     status: status,
+                    students: [],
                 },
             };
             const result = await instructorClassCollection.updateOne(filter, updateDoc);
             res.send(result);
 
         })
+        app.patch('/enroll/:id', async (req, res) => {
+            const id = req.params.id;
+            const { email } = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const selectedClasses = await instructorClassCollection.findOne(filter);
+
+            try {
+                if (!selectedClasses.students?.includes(email)) {
+                    const update = selectedClasses.students.push(email)
+                    const result = await instructorClassCollection.updateOne(update);
+                    res.send(result);
+                }
+            }catch(e){
+                res.send('not update');
+            }
+
+        })
+
+        // app.patch('/instructorClass/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const { email } = req.body;
+        //     const selectedClasses =await instructorClassCollection.find().toArray();
+        //     // Check if the class exists in the selectedClasses object
+        //     if (selectedClasses[id]) {
+        //       // If the class exists, check if the email is already in the array
+        //       if (!selectedClasses[id].includes(email)) {
+        //         // If the email is not already in the array, add it
+        //         selectedClasses[id].push(email);
+        //       }
+        //     } else {
+        //       // If the class doesn't exist, create a new array with the email and assign it to the class
+        //       selectedClasses[id] = [email];
+        //     }
+
+        //     const filter = { _id: new ObjectId(id) };
+        //     const updateDoc = {
+        //       $set: {
+        //         status: req.body.status,
+        //         students: selectedClasses[id] || [],
+        //       },
+        //     };
+
+        //     const result = await instructorClassCollection.updateOne(filter, updateDoc);
+        //     res.send(result);
+        //   });
         app.patch('/instructorClassFeedback/:classId', async (req, res) => {
 
             const classId = req.params.classId;
@@ -136,26 +183,15 @@ async function run() {
             const result = await classesCartCollection.find(query).toArray();
             res.send(result);
         });
-        app.post('/carts/update/:id', async (req, res) => {
-            const id = req.params.id;
-            const filter = { _id: new ObjectId(id) };
-            const updateDoc = {
-                $set: {
-                    isPayment: true
-                },
-            };
 
-            const result = await classesCartCollection.updateOne(filter, updateDoc);
-            res.send(result);
-        });
-
-        ///cart post
+        //cart post
         app.post('/carts', async (req, res) => {
             const item = req.body;
             const result = await classesCartCollection.insertOne(item);
             res.send(result);
         })
-        // Get a cart item by ID
+        const selectedCarts = {};
+
         app.get('/cart/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -180,19 +216,23 @@ async function run() {
 
 
         // create payment intent
-        app.post('/create-payment-intent', async (req, res) => {
-            const { price } = req.body;
-            const amount = parseInt(price * 100);
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            });
+        app.post('/payment', async (req, res) => {
+            const { paymentMethodId, amount } = req.body;
 
-            res.send({
-                clientSecret: paymentIntent.client_secret
-            })
-        })
+            try {
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount,
+                    currency: 'usd',
+                    payment_method: paymentMethodId,
+                    confirm: true,
+                });
+
+                res.status(200).json({ success: true });
+            } catch (error) {
+                console.log('Error:', error);
+                res.status(500).json({ error: 'An error occurred while processing the payment.' });
+            }
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
